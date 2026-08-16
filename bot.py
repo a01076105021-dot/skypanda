@@ -3,7 +3,7 @@ import threading
 from flask import Flask
 import requests
 
-# 1. Render 웹 서버
+# 1. Render 유지용 웹 서버
 app = Flask(__name__)
 
 @app.route('/')
@@ -28,7 +28,7 @@ def send_discord_alarm(message):
     try:
         requests.post(DISCORD_WEBHOOK_URL, json={'content': message})
     except Exception as e:
-        print(f'디스코드 전송 실패: {e}')
+        print(f'디스코드 전송 실패: {e}', flush=True)
 
 # -------------------------------------------------------------
 # 3. 개별 점검 함수들
@@ -49,7 +49,7 @@ def check_chzzk():
         elif status == 'CLOSE':
             last_chzzk_status = False
     except Exception as e:
-        print(f'치지직 점검 에러: {e}')
+        print(f'치지직 점검 에러: {e}', flush=True)
 
 def check_twitter():
     pass
@@ -58,15 +58,14 @@ def check_instagram():
     pass
 
 # -------------------------------------------------------------
-# 4. 30초마다 실행되는 메인 루프 (단순 스레드용)
+# 4. 30초마다 실행되는 메인 루프
 # -------------------------------------------------------------
 def main_loop():
-    print("모니터링 시작! (30초 주기)")
-    # 봇이 켜지자마자 정상 연결되었는지 테스트 알림을 디스코드로 보냅니다.
+    print("모니터링 시작! (30초 주기)", flush=True)
     send_discord_alarm("🤖 **[알림]** 모니터링 봇이 성공적으로 시작되었습니다!")
     
     while True:
-        print("점검 진행 중...")
+        print("점검 진행 중...", flush=True)
         check_chzzk()
         check_twitter()
         check_instagram()
@@ -81,5 +80,5 @@ if __name__ == '__main__':
     t.daemon = True
     t.start()
 
-    # 모니터링 루프 실행
+    # 모니터링 실행
     main_loop()
