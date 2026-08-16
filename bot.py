@@ -3,7 +3,7 @@ import threading
 from flask import Flask
 import requests
 
-# 1. Render 유지용 웹 서버
+# 1. Render 슬립 방지용 웹 서버
 app = Flask(__name__)
 
 @app.route('/')
@@ -14,7 +14,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=10000)
 
 # -------------------------------------------------------------
-# 2. 설정
+# 2. 설정 및 알림 함수
 # -------------------------------------------------------------
 DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1538586452664000543/YlO8otTVQh0cw3JJzMp7gAEPtYS7WUzMX2Ewk3o1cL8YpkKttktgNHlG1LkxC9nd0cdL'
 
@@ -22,11 +22,13 @@ CHZZK_CHANNEL_ID = 'a6c4ddb09cdb160478996007bff35296'
 TWITTER_USER_ID = 'ArahashiTabi'
 INSTA_USER_ID = 'tabi_dayo3o'
 
+# 상태 저장용 변수
 last_chzzk_status = False
 
 def send_discord_alarm(message):
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json={'content': message})
+        # timeout=5초 설정으로 디스코드 서버 응답 지연 시 무한 대기 방지
+        requests.post(DISCORD_WEBHOOK_URL, json={'content': message}, timeout=5)
     except Exception as e:
         print(f'디스코드 전송 실패: {e}', flush=True)
 
@@ -34,11 +36,12 @@ def send_discord_alarm(message):
 # 3. 개별 점검 함수들
 # -------------------------------------------------------------
 def check_chzzk():
+    """치지직 점검"""
     global last_chzzk_status
     try:
         url = f'https://api.chzzk.naver.com/polling/v2/channels/{CHZZK_CHANNEL_ID}/live-status'
-        # timeout=10 추가 (10초 이상 응답 없으면 대기 강제 종료 후 다음 주기로 이동)
-        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10).json()
+        # timeout=5초 설정으로 치지직 API 지연 시 무한 대기 방지
+        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5).json()
         status = res.get('content', {}).get('status')
 
         if status == 'OPEN' and not last_chzzk_status:
@@ -53,10 +56,18 @@ def check_chzzk():
         print(f'치지직 점검 에러: {e}', flush=True)
 
 def check_twitter():
-    pass
+    """트위터 점검"""
+    try:
+        pass
+    except Exception as e:
+        print(f'트위터 점검 에러: {e}', flush=True)
 
 def check_instagram():
-    pass
+    """인스타그램 점검"""
+    try:
+        pass
+    except Exception as e:
+        print(f'인스타 점검 에러: {e}', flush=True)
 
 # -------------------------------------------------------------
 # 4. 30초마다 실행되는 메인 루프
@@ -81,5 +92,5 @@ if __name__ == '__main__':
     t.daemon = True
     t.start()
 
-    # 모니터링 실행
+    # 모니터링 메인 루프 실행
     main_loop()
