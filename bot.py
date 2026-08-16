@@ -19,9 +19,9 @@ def run_flask():
 DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1538586452664000543/YlO8otTVQh0cw3JJzMp7gAEPtYS7WUzMX2Ewk3o1cL8YpkKttktgNHlG1LkxC9nd0cdL'
 
 # 트위터 설정
-TWITTER_BEARER_TOKEN = 'YOUR_TWITTER_BEARER_TOKEN'  # 트위터 개발자 센터 Bearer Token
+TWITTER_BEARER_TOKEN = 'YOUR_TWITTER_BEARER_TOKEN'  # 트위터 개발자 센터 Bearer Token 입력
 TWITTER_USER_NAME = 'ArahashiTabi'                 # 감지할 트위터 아이디 (@ 제외)
-TARGET_HASHTAG = 'tabiart'                          # #tabiart 태그 감지 (# 제외)
+TARGET_HASHTAG = 'tabiart'                          # 감지할 해시태그 (# 제외)
 
 INSTA_USER_ID = 'tabi_dayo3o'
 
@@ -88,16 +88,20 @@ def check_instagram():
         print(f'인스타 점검 에러: {e}', flush=True)
 
 # -------------------------------------------------------------
-# 4. 30초마다 실행되는 메인 루프
+# 4. 30초마다 실행되는 메인 루프 (에러 방어 및 강제 출력)
 # -------------------------------------------------------------
 def main_loop():
     print("모니터링 시작! (30초 주기)", flush=True)
     send_discord_alarm("🤖 **[알림]** 모니터링 봇이 성공적으로 시작되었습니다!")
     
     while True:
-        print("점검 진행 중...", flush=True)
-        check_twitter()
-        check_instagram()
+        try:
+            print("점검 진행 중...", flush=True)
+            check_twitter()
+            check_instagram()
+        except Exception as e:
+            print(f'메인 루프 예외 발생 (자동 복구됨): {e}', flush=True)
+            
         time.sleep(30)
 
 # -------------------------------------------------------------
