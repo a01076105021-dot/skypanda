@@ -19,11 +19,11 @@ def run_flask():
 # -------------------------------------------------------------
 # 2. 설정 및 알림 함수
 # -------------------------------------------------------------
-DISCORD_WEBHOOK_URL = '여기에_디스코드_웹훅_주소_입력'
+DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1538586452664000543/YlO8otTVQh0cw3JJzMp7gAEPtYS7WUzMX2Ewk3o1cL8YpkKttktgNHlG1LkxC9nd0cdL'
 
-CHZZK_CHANNEL_ID = '치지직_채널_ID'
-TWITTER_USER_ID = '트위터_유저_ID'
-INSTA_USER_ID = '인스타_유저_ID'
+CHZZK_CHANNEL_ID = 'a6c4ddb09cdb160478996007bff35296'
+TWITTER_USER_ID = 'ArahashiTabi'
+INSTA_USER_ID = 'tabi_dayo3o'
 
 # 상태 저장용 변수
 last_chzzk_status = False
