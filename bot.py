@@ -37,7 +37,8 @@ def check_chzzk():
     global last_chzzk_status
     try:
         url = f'https://api.chzzk.naver.com/polling/v2/channels/{CHZZK_CHANNEL_ID}/live-status'
-        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).json()
+        # timeout=10 추가 (10초 이상 응답 없으면 대기 강제 종료 후 다음 주기로 이동)
+        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10).json()
         status = res.get('content', {}).get('status')
 
         if status == 'OPEN' and not last_chzzk_status:
