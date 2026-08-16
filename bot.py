@@ -18,16 +18,18 @@ def run_flask():
 # -------------------------------------------------------------
 DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1538586452664000543/YlO8otTVQh0cw3JJzMp7gAEPtYS7WUzMX2Ewk3o1cL8YpkKttktgNHlG1LkxC9nd0cdL'
 
-CHZZK_CHANNEL_ID = 'a6c4ddb09cdb160478996007bff35296'
-TWITTER_USER_ID = 'ArahashiTabi'
+# 트위터 설정
+TWITTER_BEARER_TOKEN = 'YOUR_TWITTER_BEARER_TOKEN'  # 트위터 개발자 센터 Bearer Token
+TWITTER_USER_NAME = 'ArahashiTabi'                 # 감지할 트위터 아이디 (@ 제외)
+TARGET_HASHTAG = 'tabiart'                          # #tabiart 태그 감지 (# 제외)
+
 INSTA_USER_ID = 'tabi_dayo3o'
 
-# 상태 저장용 변수
-last_chzzk_status = False
+# 상태 저장 변수 (중복 알림 방지용)
+last_tweet_id = None
 
 def send_discord_alarm(message):
     try:
-        # timeout=5초 설정으로 디스코드 서버 응답 지연 시 무한 대기 방지
         requests.post(DISCORD_WEBHOOK_URL, json={'content': message}, timeout=5)
     except Exception as e:
         print(f'디스코드 전송 실패: {e}', flush=True)
@@ -35,30 +37,46 @@ def send_discord_alarm(message):
 # -------------------------------------------------------------
 # 3. 개별 점검 함수들
 # -------------------------------------------------------------
-def check_chzzk():
-    """치지직 점검"""
-    global last_chzzk_status
-    try:
-        url = f'https://api.chzzk.naver.com/polling/v2/channels/{CHZZK_CHANNEL_ID}/live-status'
-        # timeout=5초 설정으로 치지직 API 지연 시 무한 대기 방지
-        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5).json()
-        status = res.get('content', {}).get('status')
-
-        if status == 'OPEN' and not last_chzzk_status:
-            title = res.get('content', {}).get('liveTitle', '제목 없음')
-            send_discord_alarm(
-                f'🔴 **[치지직]** 뱅온! 방송이 시작되었습니다!\n제목: {title}\nhttps://chzzk.naver.com/live/{CHZZK_CHANNEL_ID}'
-            )
-            last_chzzk_status = True
-        elif status == 'CLOSE':
-            last_chzzk_status = False
-    except Exception as e:
-        print(f'치지직 점검 에러: {e}', flush=True)
-
 def check_twitter():
-    """트위터 점검"""
+    """#tabiart 태그 감지"""
+    global last_tweet_id
+    
+    if TWITTER_BEARER_TOKEN == 'YOUR_TWITTER_BEARER_TOKEN':
+        return  # 토큰 미입력 시 스킵
+
+    headers = {
+        'Authorization': f'Bearer {TWITTER_BEARER_TOKEN}',
+        'User-Agent': 'Mozilla/5.0'
+    }
+
     try:
-        pass
+        query = f'from:{TWITTER_USER_NAME} #{TARGET_HASHTAG}'
+        url = f'https://api.twitter.com/2/tweets/search/recent?query={query}&max_results=5&tweet.fields=created_at'
+        
+        response = requests.get(url, headers=headers, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            tweets = data.get('data', [])
+
+            if tweets:
+                latest_tweet = tweets[0]
+                tweet_id = latest_tweet['id']
+                tweet_text = latest_tweet['text']
+
+                if tweet_id != last_tweet_id:
+                    tweet_url = f'https://twitter.com/{TWITTER_USER_NAME}/status/{tweet_id}'
+                    send_discord_alarm(
+                        f'🎨 **[트위터]** #{TARGET_HASHTAG} 새 게시글이 등록되었습니다!\n\n'
+                        f'{tweet_text}\n\n'
+                        f'🔗 {tweet_url}'
+                    )
+                    last_tweet_id = tweet_id
+        else:
+            print(f'트위터 API 응답 에러 (코드: {response.status_code})', flush=True)
+
+    except requests.exceptions.Timeout:
+        print('트위터 API 응답 시간 초과 (무한 대기 방지)', flush=True)
     except Exception as e:
         print(f'트위터 점검 에러: {e}', flush=True)
 
@@ -78,7 +96,6 @@ def main_loop():
     
     while True:
         print("점검 진행 중...", flush=True)
-        check_chzzk()
         check_twitter()
         check_instagram()
         time.sleep(30)
@@ -87,10 +104,8 @@ def main_loop():
 # 5. 실행부
 # -------------------------------------------------------------
 if __name__ == '__main__':
-    # Flask 서버를 백그라운드로 실행
     t = threading.Thread(target=run_flask)
     t.daemon = True
     t.start()
 
-    # 모니터링 메인 루프 실행
     main_loop()
